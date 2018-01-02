@@ -30,6 +30,8 @@ diagnostic:
     - env | sort
     - pwd
     - ls -lR $GOPATH
+    - echo $CI_PROJECT_URL
+    - expr $CI_PROJECT_URL : 'http://\(.*\)'
 
 build:
   stage: build
@@ -39,8 +41,8 @@ build:
       - $APP
       - $APP.test
   script:
-    - WORKDIR=$GOPATH/src/$(expr $CI_PROJECT_URL : 'https://\\(.*\\)')
     - echo "$WORKDIR"
+    - [ ! -z "$WORKDIR" ]
     - mkdir -p $WORKDIR
     - mv $CI_PROJECT_DIR/* $WORKDIR/
     - cd $WORKDIR
