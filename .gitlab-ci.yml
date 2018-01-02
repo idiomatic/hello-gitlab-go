@@ -8,6 +8,7 @@ stages:
   - build
   - publish
   - test
+  - republish
   - staging
   - deploy
 
@@ -50,9 +51,6 @@ build:
 # XXX or "contain"
 publish_gitlab:
   stage: publish
-  image: docker
-  variables:
-    GIT_STRATEGY: none
   services:
     # runner should mount docker.sock instead of services: docker:dind
     - docker:dind
@@ -74,7 +72,7 @@ test:
 # WIP
 # XXX can we AWS deploy straight from gitlab's container registry?
 publish_aws:
-  stage: publish
+  stage: republish
   image: docker
   variables:
     GIT_STRATEGY: none
