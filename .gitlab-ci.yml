@@ -4,6 +4,7 @@
 # 3. re-pushes container to cloud
 
 stages:
+  - diagnostic
   - build
   - test
   - publish
@@ -19,10 +20,20 @@ stages:
 
 variables:
   APP: $CI_PROJECT_NAME
+  WORKDIR: $HOME/go/src/
   # omit repo checkout on most stages
   GIT_STRATEGY: none
   AWS_DEFAULT_REGION: us-west-2
   AWS_REGISTRY_IMAGE: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$CI_PROJECT_NAME:$CI_BUILD_REF_SLUG
+
+diagnostic:
+  stage: diagnostic
+  image: golang:alpine
+  script:
+    - env | sort
+    - pwd
+    - cd
+    - pwd
 
 build:
   stage: build
