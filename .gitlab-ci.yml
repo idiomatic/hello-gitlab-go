@@ -11,11 +11,11 @@ stages:
   - deploy
 
 # WIP
-cache:
-  untracked: true
-  key: $CI_COMMIT_REF_SLUG
-  paths:
-    - /go/src/github.com
+#cache:
+#  untracked: true
+#  key: $CI_COMMIT_REF_SLUG
+#  paths:
+#    - /go/src/github.com
 
 variables:
   APP: $CI_PROJECT_NAME
@@ -26,6 +26,7 @@ variables:
 
 build:
   stage: build
+  image: golang:alpine
   variables:
     GIT_STRATEGY: fetch
   artifacts:
@@ -39,10 +40,11 @@ build:
 
 test:
   stage: test
-  image: golang:alpine
+  image: $CI_REGISTRY_IMAGE
   script:
     - ./$APP.test
 
+# XXX or "contain"
 publish:
   stage: publish
   image: docker
@@ -56,6 +58,7 @@ publish:
     - docker push $CI_REGISTRY_IMAGE
 
 # WIP
+# XXX can we AWS deploy straight from gitlab's container registry?
 publish_aws:
   stage: publish
   image: docker
