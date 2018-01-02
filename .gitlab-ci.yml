@@ -1,0 +1,98 @@
+# container-centric go webapp CI/CD pipeline
+# 1. builds and pushes a container
+# 2. tests using build artifacts APP.test
+# 3. re-pushes container to cloud
+
+stages:
+  - build
+  - test
+  - publish
+  - staging
+  - deploy
+
+# WIP
+cache:
+  untracked: true
+  key: $CI_COMMIT_REF_SLUG
+  paths:
+    - /go/src/github.com
+
+variables:
+  APP: $CI_PROJECT_NAME
+  # omit repo checkout on most stages
+  GIT_STRATEGY: none
+  AWS_DEFAULT_REGION: us-west-2
+  AWS_REGISTRY_IMAGE: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$CI_PROJECT_NAME:$CI_BUILD_REF_SLUG
+
+build:
+  stage: build
+  variables:
+    GIT_STRATEGY: fetch
+  artifacts:
+    paths:
+      - $APP
+      - $APP.test
+  script:
+    - go get
+    - go test -c -o $APP.test
+    - go build -o $APP
+
+test:
+  stage: test
+  image: golang:alpine
+  script:
+    - ./$APP.test
+
+publish:
+  stage: publish
+  image: docker
+  services:
+    # runner should mount docker.sock instead of services: docker:dind
+    - docker:dind
+  script:
+    - docker info
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+    - docker build -t $CI_REGISTRY_IMAGE .
+    - docker push $CI_REGISTRY_IMAGE
+
+# WIP
+publish_aws:
+  stage: publish
+  image: docker
+  before_script:
+    - '[ -z "$AWS_ACCOUNT_ID" ] && { echo AWS_ACCOUNT_ID missing; exit 1; }'
+  script:
+    - aws --version
+
+# WIP
+staging_aws:
+  stage: staging
+  image:
+    name: anigeo/awscli
+    entrypoint: ["/bin/sh", "-c"]
+  environment:
+    name: staging
+    url: http://staging.example.com/
+  before_script:
+    - '[ -z "$AWS_ACCESS_KEY" ] && { echo AWS_ACCESS_KEY missing; exit 1; }'
+    - '[ -z "$AWS_SECRET_ACCESS_KEY" ] && { echo AWS_SECRET_ACCESS_KEY missing; exit 1; }'
+  script:
+    - aws --version
+    - aws ecs deploy ...
+  only:
+    - master
+
+# WIP
+production_aws:
+  stage: deploy
+  image:
+    name: anigeo/awscli
+    entrypoint: ["/bin/sh", "-c"]
+  environment:
+    name: production
+    url: https://example.com/
+  script:
+    - aws --version
+  when: manual
+  only:
+    - master
