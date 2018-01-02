@@ -38,13 +38,15 @@ build:
       - $APP
       - $APP.test
   variables:
-      WORKDIR: "$GOPATH/$(expr $CI_PROJECT_URL : 'https://\\(.*\\)')"
+      xWORKDIR: "$GOPATH/$(expr $CI_PROJECT_URL : 'https://\\(.*\\)')"
+      GOPATH: $GOROOT
   script:
-    - "export WORKDIR=$GOPATH/$(expr $CI_PROJECT_URL : 'https://\\(.*\\)')"
-    - echo "$WORKDIR"
-    - mkdir -p $WORKDIR
-    - mv $CI_PROJECT_DIR/* $WORKDIR/
-    - cd $WORKDIR
+    - echo $GOROOT
+    - echo $GOPATH
+    - "export xWORKDIR=$GOPATH/$(expr $CI_PROJECT_URL : 'https://\\(.*\\)')"
+    - echo mkdir -p $WORKDIR
+    - echo mv $CI_PROJECT_DIR/* $WORKDIR/
+    - echo cd $WORKDIR
     - echo fetching $(go list ./... | grep -v /vendor/)
     - go get $(go list ./... | grep -v /vendor/)
     - go test -c -o $APP.test
@@ -71,7 +73,8 @@ publish:
     - docker info
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
     - docker build -t $CI_REGISTRY_IMAGE .
-    - docker push $CI_REGISTRY_IMAGE
+    - docker push $CI_REGISTRY_IMAGE:$CI_BUILD_REF
+    - docker push $CI_REGISTRY_IMAGE:latest
 
 # WIP
 # XXX can we AWS deploy straight from gitlab's container registry?
