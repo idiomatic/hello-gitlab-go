@@ -42,7 +42,7 @@ build:
       - $APP.test
   script:
     - echo "$WORKDIR"
-    - [ ! -z "$WORKDIR" ]
+    - "[ ! -z "$WORKDIR" ]"
     - mkdir -p $WORKDIR
     - mv $CI_PROJECT_DIR/* $WORKDIR/
     - cd $WORKDIR
