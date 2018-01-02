@@ -20,7 +20,7 @@ stages:
 
 variables:
   APP: $CI_PROJECT_NAME
-  WORKDIR: $GOPATH/src/$(expr $CI_PROJECT_URL : 'https://\(.*\)')
+  WORKDIR: "$GOPATH/src/$(expr $CI_PROJECT_URL : 'https://\(.*\)')"
   AWS_DEFAULT_REGION: us-west-2
   AWS_REGISTRY_IMAGE: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$CI_PROJECT_NAME:$CI_BUILD_REF_SLUG
 
