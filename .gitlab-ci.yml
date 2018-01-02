@@ -31,7 +31,7 @@ diagnostic:
     - pwd
     - ls -lR $GOPATH
     - echo $CI_PROJECT_URL
-    - "expr $CI_PROJECT_URL : 'http://\(.*\)'"
+    - "expr $CI_PROJECT_URL : 'http://\\(.*\\)'"
 
 build:
   stage: build
