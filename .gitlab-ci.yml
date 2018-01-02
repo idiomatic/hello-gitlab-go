@@ -4,7 +4,7 @@
 # 3. re-pushes container to cloud
 
 stages:
-  - diagnostic
+  #- diagnostic
   - build
   - test
   - publish
@@ -23,12 +23,12 @@ variables:
   AWS_DEFAULT_REGION: us-west-2
   AWS_REGISTRY_IMAGE: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$CI_PROJECT_NAME:$CI_BUILD_REF_SLUG
 
-diagnostic:
-  stage: diagnostic
-  image: golang:alpine
-  script:
-    - env | sort
-    - pwd
+#diagnostic:
+#  stage: diagnostic
+#  image: golang:alpine
+#  script:
+#    - env | sort
+#    - pwd
 
 build:
   stage: build
@@ -47,8 +47,9 @@ build:
     - echo mkdir -p $WORKDIR
     - echo mv $CI_PROJECT_DIR/* $WORKDIR/
     - echo cd $WORKDIR
-    - echo fetching $(go list ./... | grep -v /vendor/)
-    - go get $(go list ./... | grep -v /vendor/)
+    - 'GO_GET=$(go list ./... | grep -v "/vendor/\|$(pwd)")'
+    - echo fetching $GO_GET
+    - go get -d $GO_GET
     - go test -c -o $APP.test
     - go build -o $APP
 
