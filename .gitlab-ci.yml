@@ -39,7 +39,7 @@ build:
       - $APP
       - $APP.test
   script:
-    - WORKDIR=$GOPATH/src/$(expr $CI_PROJECT_URL : 'https://\(.*\)')
+    - "WORKDIR=$GOPATH/src/$(expr $CI_PROJECT_URL : 'https://\(.*\)')"
     - echo "$WORKDIR"
     - mkdir -p $WORKDIR
     - mv $CI_PROJECT_DIR/* $WORKDIR/
