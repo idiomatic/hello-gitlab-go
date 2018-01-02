@@ -37,19 +37,13 @@ build:
     paths:
       - $APP
       - $APP.test
-  variables:
-      xWORKDIR: "$GOPATH/$(expr $CI_PROJECT_URL : 'https://\\(.*\\)')"
-      GOPATH: $GOROOT
   script:
-    - echo $GOROOT
-    - echo $GOPATH
-    - "export xWORKDIR=$GOPATH/$(expr $CI_PROJECT_URL : 'https://\\(.*\\)')"
-    - echo mkdir -p $WORKDIR
-    - echo mv $CI_PROJECT_DIR/* $WORKDIR/
-    - echo cd $WORKDIR
-    - 'GO_GET=$(go list ./... | grep -v "/vendor/\|$(pwd)")'
-    - echo fetching $GO_GET
-    - go get -d $GO_GET
+    - "PKG=$(expr $CI_PROJECT_URL : 'https://\\(.*\\)')"
+    - mkdir -p $GOPATH/src/$PKG
+    - rmdir $GOPATH/src/$PKG
+    - ln -s $(pwd) $GOPATH/src/$PKG
+    - cd $GOPATH/src/$PKG
+    - go get -d ./...
     - go test -c -o $APP.test
     - go build -o $APP
 
