@@ -16,13 +16,11 @@ stages:
 #  untracked: true
 #  key: $CI_COMMIT_REF_SLUG
 #  paths:
-#    - /go/src/github.com
+#    - $GOPATH/src/github.com
 
 variables:
   APP: $CI_PROJECT_NAME
-  WORKDIR: $HOME/go/src/
-  # omit repo checkout on most stages
-  GIT_STRATEGY: none
+  WORKDIR: $GOPATH/src/$(expr $CI_PROJECT_URL : 'https://\(.*\)')
   AWS_DEFAULT_REGION: us-west-2
   AWS_REGISTRY_IMAGE: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$CI_PROJECT_NAME:$CI_BUILD_REF_SLUG
 
@@ -32,26 +30,29 @@ diagnostic:
   script:
     - env | sort
     - pwd
-    - cd
-    - pwd
+    - ls -lR $GOPATH
+    - echo "$WORKDIR"
 
 build:
   stage: build
   image: golang:alpine
-  variables:
-    GIT_STRATEGY: fetch
   artifacts:
     paths:
       - $APP
       - $APP.test
   script:
-    - go get
+    - mkdir -p $WORKDIR
+    - mv $CI_PROJECT_DIR/* $WORKDIR/
+    - cd $WORKDIR
+    - go get $(go list ./... | grep -v /vendor/)
     - go test -c -o $APP.test
     - go build -o $APP
 
 test:
   stage: test
   image: $CI_REGISTRY_IMAGE
+  variables:
+    GIT_STRATEGY: none
   script:
     - ./$APP.test
 
@@ -59,6 +60,8 @@ test:
 publish:
   stage: publish
   image: docker
+  variables:
+    GIT_STRATEGY: none
   services:
     # runner should mount docker.sock instead of services: docker:dind
     - docker:dind
@@ -73,6 +76,8 @@ publish:
 publish_aws:
   stage: publish
   image: docker
+  variables:
+    GIT_STRATEGY: none
   before_script:
     - '[ -z "$AWS_ACCOUNT_ID" ] && { echo AWS_ACCOUNT_ID missing; exit 1; }'
   script:
@@ -84,6 +89,8 @@ staging_aws:
   image:
     name: anigeo/awscli
     entrypoint: ["/bin/sh", "-c"]
+  variables:
+    GIT_STRATEGY: none
   environment:
     name: staging
     url: http://staging.example.com/
@@ -102,6 +109,8 @@ production_aws:
   image:
     name: anigeo/awscli
     entrypoint: ["/bin/sh", "-c"]
+  variables:
+    GIT_STRATEGY: none
   environment:
     name: production
     url: https://example.com/
