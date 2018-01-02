@@ -6,8 +6,8 @@
 stages:
   #- diagnostic
   - build
-  - test
   - publish
+  - test
   - staging
   - deploy
 
@@ -47,16 +47,8 @@ build:
     - go test -c -o $APP.test
     - go build -o $APP
 
-test:
-  stage: test
-  image: $CI_REGISTRY_IMAGE
-  variables:
-    GIT_STRATEGY: none
-  script:
-    - ./$APP.test
-
 # XXX or "contain"
-publish:
+publish_gitlab:
   stage: publish
   image: docker
   variables:
@@ -70,6 +62,14 @@ publish:
     - docker build -t $CI_REGISTRY_IMAGE .
     - docker push $CI_REGISTRY_IMAGE:$CI_BUILD_REF
     - docker push $CI_REGISTRY_IMAGE:latest
+
+test:
+  stage: test
+  image: $CI_REGISTRY_IMAGE:$CI_BUILD_REF
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - ./$APP.test
 
 # WIP
 # XXX can we AWS deploy straight from gitlab's container registry?
