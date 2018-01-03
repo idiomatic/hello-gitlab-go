@@ -4,32 +4,16 @@
 # 3. re-pushes container to cloud
 
 stages:
-  #- diagnostic
   - build
-  - publish
+  - containerize
   - test
-  - republish
   - staging
   - deploy
-
-# WIP
-#cache:
-#  untracked: true
-#  key: $CI_COMMIT_REF_SLUG
-#  paths:
-#    - $GOPATH/src/github.com
 
 variables:
   APP: $CI_PROJECT_NAME
   AWS_DEFAULT_REGION: us-west-2
   AWS_REGISTRY_IMAGE: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$CI_PROJECT_NAME:$CI_BUILD_REF_SLUG
-
-#diagnostic:
-#  stage: diagnostic
-#  image: golang:alpine
-#  script:
-#    - env | sort
-#    - pwd
 
 build:
   stage: build
@@ -40,24 +24,24 @@ build:
       - $APP.test
   script:
     - "PKG=$(expr $CI_PROJECT_URL : 'https://\\(.*\\)')"
-    - mkdir -p $GOPATH/src/$PKG
-    - rmdir $GOPATH/src/$PKG
+    - mkdir -p $(dirname $GOPATH/src/$PKG)
     - ln -s $(pwd) $GOPATH/src/$PKG
     - cd $GOPATH/src/$PKG
-    - go get -d ./...
+    - go get -d $(go list ./... | grep -v /vendor/)
     - go test -c -o $APP.test
     - go build -o $APP
 
-# XXX or "contain"
-publish_gitlab:
-  stage: publish
+containerize:
+  stage: containerize
+  image: docker
   services:
     # runner should mount docker.sock instead of services: docker:dind
     - docker:dind
-  script:
+  before_script:
     - docker info
+  script:
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
-    - docker build -t $CI_REGISTRY_IMAGE .
+    - docker build -t $CI_REGISTRY_IMAGE:latest -t $CI_REGISTRY_IMAGE:$CI_BUILD_REF .
     - docker push $CI_REGISTRY_IMAGE:$CI_BUILD_REF
     - docker push $CI_REGISTRY_IMAGE:latest
 
@@ -66,20 +50,14 @@ test:
   image: $CI_REGISTRY_IMAGE:$CI_BUILD_REF
   variables:
     GIT_STRATEGY: none
+  services:
+    - cassandra
   script:
+    # hack to wait for cassandra
+    - sleep 5
+    - pwd
+    - cd /app
     - ./$APP.test
-
-# WIP
-# XXX can we AWS deploy straight from gitlab's container registry?
-publish_aws:
-  stage: republish
-  image: docker
-  variables:
-    GIT_STRATEGY: none
-  before_script:
-    - '[ -z "$AWS_ACCOUNT_ID" ] && { echo AWS_ACCOUNT_ID missing; exit 1; }'
-  script:
-    - aws --version
 
 # WIP
 staging_aws:
@@ -93,6 +71,9 @@ staging_aws:
     name: staging
     url: http://staging.example.com/
   before_script:
+    - env | sort
+    - which aws || true
+    - which ecs || true
     - '[ -z "$AWS_ACCESS_KEY" ] && { echo AWS_ACCESS_KEY missing; exit 1; }'
     - '[ -z "$AWS_SECRET_ACCESS_KEY" ] && { echo AWS_SECRET_ACCESS_KEY missing; exit 1; }'
   script:
