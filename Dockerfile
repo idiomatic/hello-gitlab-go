@@ -1,9 +1,9 @@
 FROM golang:alpine
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
 COPY . .
 
-CMD [ "go", "run", "main.go" ]
+CMD [ "./hello-gitlab-go" ]
 
 EXPOSE 8000
